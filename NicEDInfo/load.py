@@ -7,7 +7,7 @@ from ttkHyperlinkLabel import HyperlinkLabel
 this = sys.modules[__name__]
 this.plugin_name = "Nic ED Info"
 this.plugin_url = "https://github.com/jpwalsh1/NicEDInfo"
-this.version_info = (0, 1, 0)
+this.version_info = (0, 2, 0)
 this.version = ".".join(map(str, this.version_info))
 
 
@@ -77,6 +77,35 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         with open(current_mode, "w") as mode_file:
             mode_file.write(this.mode)
         this.status["text"] = "Mode updated"
+    # End get current game mode
+
+    # Store the name of your Fleet Carrier.
+    elif entry["event"] in ["CarrierStats"] and not is_beta:
+        this.fleetcarrier_name = entry.get('Name')
+        carrier_name = config.get('outdir') + "/carrier_name.txt"
+        with open(carrier_name, "w") as carrier_name_file:
+            carrier_name_file.write(this.fleetcarrier_name)
+
+    # Build a message about your pending Fleet Carrier Jump
+    elif entry["event"] in ["CarrierJumpRequest"] and not is_beta:
+        this.system = entry.get('SystemName')
+        # Get Fleet Carrier Name
+        carrier_name = config.get('outdir') + "/carrier_name.txt"
+        with open(carrier_name, "r") as carrier_name_file:
+            this.fleetcarrier_name = carrier_name_file.read()
+        # Message: [Fleet Carrier] is jumping to the [System Name] system.
+        jump_text = "{} is jumping to the {} system.     ".format(this.fleetcarrier_name, this.system)
+        carrier_jump = config.get('outdir') + "/carrier_jump.txt"
+        with open(carrier_jump, "w") as jump_file:
+            jump_file.write(jump_text)
+        this.status["text"] = "Carrier Jump Detected"
+    # Clear out carrier message file if jump is complted or cancelled.
+    elif entry["event"] in ["CarrierJumpCancelled", "CarrierJump"] and not is_beta:
+        carrier_info = config.get('outdir') + "/carrier_jump.txt"
+        carrier_file = open(carrier_info, "r+")
+        carrier_file.truncate(0)
+        carrier_file.close()
+        this.station["text"] = "Carrier Jump File Updated"
     else:
         this.status["text"] = "Ready CMDR " + cmdr
 
