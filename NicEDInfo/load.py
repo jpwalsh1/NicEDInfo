@@ -3,6 +3,7 @@ import tkinter as tk
 import myNotebook as nb
 from config import config
 from ttkHyperlinkLabel import HyperlinkLabel
+from pathlib import Path
 
 this = sys.modules[__name__]
 this.plugin_name = "Nic ED Info"
@@ -99,13 +100,35 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         with open(carrier_jump, "w") as jump_file:
             jump_file.write(jump_text)
         this.status["text"] = "Carrier Jump Detected"
-    # Clear out carrier message file if jump is complted or cancelled.
+    # Clear out carrier message file if jump is completed or cancelled.
     elif entry["event"] in ["CarrierJumpCancelled", "CarrierJump"] and not is_beta:
         carrier_info = config.get('outdir') + "/carrier_jump.txt"
         carrier_file = open(carrier_info, "r+")
         carrier_file.truncate(0)
         carrier_file.close()
         this.station["text"] = "Carrier Jump File Updated"
+    # Log Passenger missions when accepted
+    elif entry["event"] in ["MissionAccepted"] and not is_beta:
+        if entry["Name"] in ["Mission_DS_PassengerBulk"]:
+            this.missions[entry["MissionID"]] = entry["PassengerCount"]
+            Path(config.get('outdir') + "/passengers.txt").touch()
+    # Once mission is completed, grab current total, add passengers from mission, update file
+    elif entry["event"] in ["MissionCompleted"] and not is_beta:
+        if entry["Name"] in ["Mission_DS_PassengerBulk_name"]:
+            # Get current count
+            passenger_path = config.get('outdir') + "/passengers.txt"
+            with open(passenger_path, "r") as passenger_file:
+                contents = passenger_file.readline()
+                this.passenger_counts = int(contents)
+            # Try to add completed mission passenger count
+            try:
+                this.passenger_counts += int(this.missions[entry["MissionId"]])
+                del this.missions[entry["MissionID"]]
+                with open(passenger_path, "w+") as passenger_file:
+                    passenger_file.write(str(this.passenger_counts))
+                this.status["text"] = "Delivered {} passengers.".format(str(this.passenger_counts))
+            except KeyError:
+                this.status["text"] = "Unknown Mission Completed"
     else:
         this.status["text"] = "Ready CMDR " + cmdr
 
