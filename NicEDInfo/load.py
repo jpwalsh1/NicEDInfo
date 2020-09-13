@@ -3,13 +3,13 @@ import tkinter as tk
 import myNotebook as nb
 from config import config
 from ttkHyperlinkLabel import HyperlinkLabel
-from pathlib import Path
 
 this = sys.modules[__name__]
 this.plugin_name = "Nic ED Info"
 this.plugin_url = "https://github.com/jpwalsh1/NicEDInfo"
 this.version_info = (0, 2, 0)
 this.version = ".".join(map(str, this.version_info))
+this.missions = {}
 
 
 def plugin_start(plugin_dir):
@@ -107,11 +107,16 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         carrier_file.truncate(0)
         carrier_file.close()
         this.station["text"] = "Carrier Jump File Updated"
+
     # Log Passenger missions when accepted
     elif entry["event"] in ["MissionAccepted"] and not is_beta:
         if entry["Name"] in ["Mission_DS_PassengerBulk"]:
             this.missions[entry["MissionID"]] = entry["PassengerCount"]
-            Path(config.get('outdir') + "/passengers.txt").touch()
+            passenger_path = config.get('outdir') + "/passengers.txt"
+            with open(passenger_path, "w") as passenger_file:
+                pass
+            this.status["text"] = "Passenger Mission Accepted: {} passengers".format(entry["PassengerCount"])
+
     # Once mission is completed, grab current total, add passengers from mission, update file
     elif entry["event"] in ["MissionCompleted"] and not is_beta:
         if entry["Name"] in ["Mission_DS_PassengerBulk_name"]:
@@ -119,11 +124,15 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             passenger_path = config.get('outdir') + "/passengers.txt"
             with open(passenger_path, "r") as passenger_file:
                 contents = passenger_file.readline()
-                this.passenger_counts = int(contents)
+                if not contents:
+                    this.passenger_counts = 0
+                else:
+                    this.passenger_counts = int(contents)
             # Try to add completed mission passenger count
             try:
-                this.passenger_counts += int(this.missions[entry["MissionId"]])
+                this.passenger_counts += int(this.missions[entry["MissionID"]])
                 del this.missions[entry["MissionID"]]
+                passenger_path = config.get('outdir') + "/passengers.txt"
                 with open(passenger_path, "w+") as passenger_file:
                     passenger_file.write(str(this.passenger_counts))
                 this.status["text"] = "Delivered {} passengers.".format(str(this.passenger_counts))
