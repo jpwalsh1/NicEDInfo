@@ -7,7 +7,7 @@ from ttkHyperlinkLabel import HyperlinkLabel
 this = sys.modules[__name__]
 this.plugin_name = "Nic ED Info"
 this.plugin_url = "https://github.com/jpwalsh1/NicEDInfo"
-this.version_info = (0, 2, 0)
+this.version_info = (0, 3, 0)
 this.version = ".".join(map(str, this.version_info))
 this.missions = {}
 
