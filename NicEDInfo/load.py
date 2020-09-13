@@ -7,7 +7,7 @@ from ttkHyperlinkLabel import HyperlinkLabel
 this = sys.modules[__name__]
 this.plugin_name = "Nic ED Info"
 this.plugin_url = "https://github.com/jpwalsh1/NicEDInfo"
-this.version_info = (0, 3, 0)
+this.version_info = (0, 3, 1)
 this.version = ".".join(map(str, this.version_info))
 this.missions = {}
 
@@ -112,10 +112,14 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     elif entry["event"] in ["MissionAccepted"] and not is_beta:
         if entry["Name"] in ["Mission_DS_PassengerBulk"]:
             this.missions[entry["MissionID"]] = entry["PassengerCount"]
-            passenger_path = config.get('outdir') + "/passengers.txt"
-            with open(passenger_path, "w") as passenger_file:
-                pass
             this.status["text"] = "Passenger Mission Accepted: {} passengers".format(entry["PassengerCount"])
+            # Create/Ensure the passenger file exists
+            passenger_path = config.get('outdir') + "/passengers.txt"
+            try:
+                with open(passenger_path, "x") as passenger_file:
+                    pass
+            except FileExistsError:
+                pass
 
     # Once mission is completed, grab current total, add passengers from mission, update file
     elif entry["event"] in ["MissionCompleted"] and not is_beta:
