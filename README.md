@@ -11,6 +11,7 @@ Current files created by the plugin
 * mode.txt - Current mode/Private Group you are playing in.
 * carrier_jump.txt - Message about your upcoming jump. Format - [Fleet Carrier Name] is jumping to the [System] system. This file is also emptied when the Jump is completed or cancelled.
 * carrier_name.txt - The name of your Fleet Carrier without the ID on the end.
+* passengers.txt - The total count of passengers that you have transported. Useful for the evacuation events.
 
 Example Usage in a Scene, use the text however you want!
 
